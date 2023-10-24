@@ -10,12 +10,7 @@ import io.gatling.javaapi.http.HttpProtocolBuilder;
 import java.time.Duration;
 import java.util.Map;
 
-import static io.gatling.javaapi.core.CoreDsl.constantConcurrentUsers;
-import static io.gatling.javaapi.core.CoreDsl.css;
-import static io.gatling.javaapi.core.CoreDsl.doSwitch;
-import static io.gatling.javaapi.core.CoreDsl.exec;
-import static io.gatling.javaapi.core.CoreDsl.rampConcurrentUsers;
-import static io.gatling.javaapi.core.CoreDsl.scenario;
+import static io.gatling.javaapi.core.CoreDsl.*;
 import static io.gatling.javaapi.http.HttpDsl.http;
 
 public class FormSubmission extends Simulation {
@@ -45,10 +40,15 @@ public class FormSubmission extends Simulation {
 
     private final ScenarioBuilder scenario = scenario("RecordedSimulation")
             .exec(getStartPage(String.format("/form/%s", FORM_ID)))
-            .asLongAs(session -> session.getString("input_name") != "false", "question_number").on(
+            .asLongAs(session -> session.getString("input_name") != "false" &&
+                                 !session.getString("input_name").startsWith("email_confirmation_form"),
+                      "question_number")
+            .on(
+                    exec(debug("answer questions")).
                     exec(answerQuestion())
                             .pause(3, 10)
             )
+            .exec(debug("before submit answers"))
             .exec(submitAnswers());
 
     {
@@ -150,13 +150,14 @@ public class FormSubmission extends Simulation {
                 .post("#{action_path}")
                 .requestTimeout(Duration.ofMinutes(1))
                 .headers(headers)
+                .formParam("email_confirmation_form[send_confirmation]", "skip_confirmation")
                 .formParam("authenticity_token", "#{auth_token}")
                 .formParam("notify_reference", "b2654330-37bc-4fa7-9e16-6341d9798d0b"));
     }
 
-    private ChainBuilder debug() {
+    private ChainBuilder debug(String prefix) {
         return exec(session -> {
-//            System.out.println(session);
+            System.out.println(prefix + ": " +session.getString("input_name"));
             return session;
         });
     }
