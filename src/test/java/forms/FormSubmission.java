@@ -3,23 +3,39 @@ package forms;
 import io.gatling.javaapi.core.ChainBuilder;
 import io.gatling.javaapi.core.CheckBuilder;
 import io.gatling.javaapi.core.Choice;
+import io.gatling.javaapi.core.FeederBuilder;
 import io.gatling.javaapi.core.ScenarioBuilder;
 import io.gatling.javaapi.core.Simulation;
 import io.gatling.javaapi.http.HttpProtocolBuilder;
 
 import java.time.Duration;
+import java.util.Arrays;
 import java.util.Map;
+import java.util.stream.Collectors;
 
-import static io.gatling.javaapi.core.CoreDsl.*;
+import static io.gatling.javaapi.core.CoreDsl.constantConcurrentUsers;
+import static io.gatling.javaapi.core.CoreDsl.css;
+import static io.gatling.javaapi.core.CoreDsl.doSwitch;
+import static io.gatling.javaapi.core.CoreDsl.exec;
+import static io.gatling.javaapi.core.CoreDsl.feed;
+import static io.gatling.javaapi.core.CoreDsl.listFeeder;
+import static io.gatling.javaapi.core.CoreDsl.rampConcurrentUsers;
+import static io.gatling.javaapi.core.CoreDsl.scenario;
 import static io.gatling.javaapi.http.HttpDsl.http;
 
 public class FormSubmission extends Simulation {
 
     private final int RAMP_DURATION_SECONDS = Integer.parseInt(System.getenv().getOrDefault("RAMP_DURATION_SECONDS", "1"));
-    private final int MAX_CONCURRENT_USERS = Integer.parseInt(System.getenv().getOrDefault("MAX_CONCURRENT_USERS", "1"));
+    private final int MAX_CONCURRENT_USERS = Integer.parseInt(System.getenv().getOrDefault("MAX_CONCURRENT_USERS", "4"));
     private final int MAX_CONCURRENT_DURATION_SECONDS = Integer.parseInt(System.getenv().getOrDefault("MAX_CONCURRENT_DURATION_SECONDS", "10"));
-    private final int FORM_ID = Integer.parseInt(System.getenv().getOrDefault("FORM_ID", "8921"));
+    private final String FORM_IDS = System.getenv().getOrDefault("FORM_IDS", "8921,71,33");
     private final String FORMS_RUNNER_BASE_URL = System.getenv().getOrDefault("FORMS_RUNNER_BASE_URL", "https://submit.dev.forms.service.gov.uk");
+
+    private final FeederBuilder<Object> formFeeder = listFeeder(
+            Arrays.stream(FORM_IDS.split(","))
+                    .map( id -> Map.<String, Object>of("form_id", id.trim()))
+                    .collect(Collectors.toList())
+    ).circular();
 
     private final HttpProtocolBuilder HTTP_PROTOCOL = http.
             baseUrl(FORMS_RUNNER_BASE_URL)
@@ -39,16 +55,14 @@ public class FormSubmission extends Simulation {
     );
 
     private final ScenarioBuilder scenario = scenario("RecordedSimulation")
-            .exec(getStartPage(String.format("/form/%s", FORM_ID)))
+            .exec(getStartPage())
             .asLongAs(session -> session.getString("input_name") != "false" &&
                                  !session.getString("input_name").startsWith("email_confirmation_form"),
                       "question_number")
             .on(
-                    exec(debug("answer questions")).
                     exec(answerQuestion())
                             .pause(3, 10)
             )
-            .exec(debug("before submit answers"))
             .exec(submitAnswers());
 
     {
@@ -74,7 +88,7 @@ public class FormSubmission extends Simulation {
     }
 
     private ChainBuilder enterAnswerOf(String answer) {
-        return exec(http("question #{question_number}")
+        return exec(http("form #{form_id} question #{question_number}")
                 .post("#{action_path}")
                 .requestTimeout(Duration.ofMinutes(1))
                 .headers(headers)
@@ -86,7 +100,7 @@ public class FormSubmission extends Simulation {
     }
 
     private ChainBuilder enterAddress() {
-        return exec(http("question #{question_number}")
+        return exec(http("form #{form_id} question #{question_number}")
                 .post("#{action_path}")
                 .requestTimeout(Duration.ofMinutes(1))
                 .headers(headers)
@@ -102,7 +116,7 @@ public class FormSubmission extends Simulation {
     }
 
     private ChainBuilder enterDate() {
-        return exec(http("question #{question_number}")
+        return exec(http("form #{form_id} question #{question_number}")
                 .post("#{action_path}")
                 .requestTimeout(Duration.ofMinutes(1))
                 .headers(headers)
@@ -115,9 +129,10 @@ public class FormSubmission extends Simulation {
                 .check(getInputName()));
     }
 
-    private ChainBuilder getStartPage(String path) {
-        return exec(http("Get start page")
-                .get(path)
+    private ChainBuilder getStartPage() {
+        return feed(formFeeder)
+                .exec(http("form #{form_id} start page")
+                .get("/form/#{form_id}")
                 .requestTimeout(Duration.ofMinutes(1))
                 .headers(Map.of(
                         "Sec-Fetch-Dest", "document",
@@ -146,7 +161,7 @@ public class FormSubmission extends Simulation {
     }
 
     private ChainBuilder submitAnswers() {
-        return exec(http("submit answers")
+        return exec(http("form #{form_id} submit answers")
                 .post("#{action_path}")
                 .requestTimeout(Duration.ofMinutes(1))
                 .headers(headers)
