@@ -23,13 +23,13 @@ configured value (see below) and then held before ramping back down.
 
 The following environment variables are available:
 
-`FORM_ID` (default 8921) the form id to complete.
+`FORM_IDS` (default 8921,71,33) a comma separated list of one or more form ids. Requests will be evenly distributed between all forms.
 
 `FORMS_RUNNER_BASE_URL` (default https://submit.dev.forms.service.gov.uk) the base URL for forms-runner.
 
 `RAMP_DURATION_SECONDS` (default 1 second) how long in seconds the test ramps up from 0 to the maximum users and back down again.
 
-`MAX_CONCURRENT_USERS` (default 1 user) how many users will be filling in a form at the same time.
+`MAX_CONCURRENT_USERS` (default 4 user) how many users will be filling in a form at the same time.
 
 `MAX_CONCURRENT_DURATION_SECONDS` (default 10 seconds) how long the test will run with the max concurrent users before ramping back down.
 
