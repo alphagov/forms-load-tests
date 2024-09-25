@@ -78,6 +78,7 @@ public class FormSubmission extends Simulation {
                 Choice.withKey("question[date(3i)]", exec(enterDate())),
                 Choice.withKey("question[address1]", exec(enterAddress())),
                 Choice.withKey("question[selection]", exec(enterAnswerOf("Blue"))),
+                Choice.withKey("question[selection][]", exec(enterAnswerOf("Blue"))),
                 Choice.withKey("question[number]", exec(enterAnswerOf("42"))),
                 Choice.withKey("question[email]", exec(enterAnswerOf("test@test.test"))),
                 Choice.withKey("question[full_name]", exec(enterAnswerOf("Gatling Tester"))),
@@ -156,7 +157,7 @@ public class FormSubmission extends Simulation {
     }
 
     private CheckBuilder getInputName() {
-        return css(".govuk-input, .govuk-radios__input, .govuk-textarea", "name").withDefault("false")
+        return css(".govuk-input, .govuk-checkboxes__input, .govuk-radios__input, .govuk-textarea", "name").withDefault("false")
                 .saveAs("input_name");
     }
 
