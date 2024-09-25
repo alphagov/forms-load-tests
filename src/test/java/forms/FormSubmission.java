@@ -57,7 +57,7 @@ public class FormSubmission extends Simulation {
     private final ScenarioBuilder scenario = scenario("RecordedSimulation")
             .exec(getStartPage())
             .asLongAs(session -> session.getString("input_name") != "false" &&
-                                 !session.getString("input_name").startsWith("email_confirmation_form"),
+                                 !session.getString("input_name").startsWith("email_confirmation_input"),
                       "question_number")
             .on(
                     exec(answerQuestion())
@@ -165,7 +165,7 @@ public class FormSubmission extends Simulation {
                 .post("#{action_path}")
                 .requestTimeout(Duration.ofMinutes(1))
                 .headers(headers)
-                .formParam("email_confirmation_form[send_confirmation]", "skip_confirmation")
+                .formParam("email_confirmation_input[send_confirmation]", "skip_confirmation")
                 .formParam("authenticity_token", "#{auth_token}")
                 .formParam("notify_reference", "b2654330-37bc-4fa7-9e16-6341d9798d0b"));
     }
