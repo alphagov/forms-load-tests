@@ -147,12 +147,12 @@ public class FormSubmission extends Simulation {
     }
 
     private CheckBuilder getAuthToken() {
-        return css("#main-content > div > div > form > input[name=authenticity_token][type=hidden]", "value")
+        return css("#main-content form input[name=authenticity_token][type=hidden]", "value")
                 .saveAs("auth_token");
     }
 
     private CheckBuilder getActionPath() {
-        return css("#main-content > div > div > form", "action")
+        return css("#main-content form", "action")
                 .saveAs("action_path");
     }
 
