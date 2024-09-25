@@ -47,7 +47,7 @@ public class FormSubmission extends Simulation {
             .userAgentHeader("Gatling load tests");
 
     private final Map<CharSequence, String> headers = Map.of(
-            "Origin", "https://submit.dev.forms.service.gov.uk",
+            "Origin", FORMS_RUNNER_BASE_URL,
             "Sec-Fetch-Dest", "document",
             "Sec-Fetch-Mode", "navigate",
             "Sec-Fetch-Site", "same-origin",
