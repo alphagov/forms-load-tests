@@ -47,7 +47,7 @@ public class FormSubmission extends Simulation {
             .userAgentHeader("Gatling load tests");
 
     private final Map<CharSequence, String> headers = Map.of(
-            "Origin", "https://submit.dev.forms.service.gov.uk",
+            "Origin", FORMS_RUNNER_BASE_URL,
             "Sec-Fetch-Dest", "document",
             "Sec-Fetch-Mode", "navigate",
             "Sec-Fetch-Site", "same-origin",
@@ -57,7 +57,7 @@ public class FormSubmission extends Simulation {
     private final ScenarioBuilder scenario = scenario("RecordedSimulation")
             .exec(getStartPage())
             .asLongAs(session -> session.getString("input_name") != "false" &&
-                                 !session.getString("input_name").startsWith("email_confirmation_form"),
+                                 !session.getString("input_name").startsWith("email_confirmation_input"),
                       "question_number")
             .on(
                     exec(answerQuestion())
@@ -78,6 +78,7 @@ public class FormSubmission extends Simulation {
                 Choice.withKey("question[date(3i)]", exec(enterDate())),
                 Choice.withKey("question[address1]", exec(enterAddress())),
                 Choice.withKey("question[selection]", exec(enterAnswerOf("Blue"))),
+                Choice.withKey("question[selection][]", exec(enterAnswerOf("Blue"))),
                 Choice.withKey("question[number]", exec(enterAnswerOf("42"))),
                 Choice.withKey("question[email]", exec(enterAnswerOf("test@test.test"))),
                 Choice.withKey("question[full_name]", exec(enterAnswerOf("Gatling Tester"))),
@@ -146,17 +147,17 @@ public class FormSubmission extends Simulation {
     }
 
     private CheckBuilder getAuthToken() {
-        return css("#main-content > div > div > form > input[name=authenticity_token][type=hidden]", "value")
+        return css("#main-content form input[name=authenticity_token][type=hidden]", "value")
                 .saveAs("auth_token");
     }
 
     private CheckBuilder getActionPath() {
-        return css("#main-content > div > div > form", "action")
+        return css("#main-content form", "action")
                 .saveAs("action_path");
     }
 
     private CheckBuilder getInputName() {
-        return css(".govuk-input, .govuk-radios__input, .govuk-textarea", "name").withDefault("false")
+        return css(".govuk-input, .govuk-checkboxes__input, .govuk-radios__input, .govuk-textarea", "name").withDefault("false")
                 .saveAs("input_name");
     }
 
@@ -165,7 +166,7 @@ public class FormSubmission extends Simulation {
                 .post("#{action_path}")
                 .requestTimeout(Duration.ofMinutes(1))
                 .headers(headers)
-                .formParam("email_confirmation_form[send_confirmation]", "skip_confirmation")
+                .formParam("email_confirmation_input[send_confirmation]", "skip_confirmation")
                 .formParam("authenticity_token", "#{auth_token}")
                 .formParam("notify_reference", "b2654330-37bc-4fa7-9e16-6341d9798d0b"));
     }
